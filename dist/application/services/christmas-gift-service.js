@@ -1,0 +1,47 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ChristmasGiftService = void 0;
+const api_error_1 = require("../../core/errors/api-error");
+class ChristmasGiftService {
+    constructor(models) {
+        this.models = models;
+    }
+    async claimGift(userId) {
+        const user = await this.models.User.findByPk(userId);
+        if (!user) {
+            throw new Error('User not found');
+        }
+        const currentDate = new Date();
+        const oneMonthLater = new Date(currentDate);
+        oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+        const hasActiveSubscription = (user.subscriptionTier && user.subscriptionTier !== 'free') &&
+            (!user.subscriptionExpiresAt || new Date(user.subscriptionExpiresAt) > currentDate);
+        if (hasActiveSubscription) {
+            throw new api_error_1.ApiError(409, 'Gift already claimed');
+        }
+        const newExpiresAt = oneMonthLater;
+        console.log('[ChristmasGift] Before update:', {
+            userId,
+            currentTier: user.subscriptionTier,
+            currentExpiresAt: user.subscriptionExpiresAt
+        });
+        await this.models.User.update({
+            subscriptionTier: 'premium',
+            subscriptionExpiresAt: newExpiresAt
+        }, {
+            where: { id: userId }
+        });
+        const updatedUser = await this.models.User.findByPk(userId);
+        console.log('[ChristmasGift] After update from DB:', {
+            userId,
+            subscriptionTier: updatedUser?.subscriptionTier,
+            subscriptionExpiresAt: updatedUser?.subscriptionExpiresAt
+        });
+        return {
+            subscriptionExpiresAt: newExpiresAt.toISOString(),
+            subscriptionTier: 'premium'
+        };
+    }
+}
+exports.ChristmasGiftService = ChristmasGiftService;
+//# sourceMappingURL=christmas-gift-service.js.map
