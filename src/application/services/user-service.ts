@@ -38,7 +38,7 @@ export class UserService {
     return { ...rest, ...roleData }
   }
 
-  async fetchUsers(options: UsersQueryOptions, _extra?: { hideSuperAdmin?: boolean }) {
+  async fetchUsers(options: UsersQueryOptions) {
     const offset = (options.page - 1) * options.limit
     const whereConditions: WhereOptions[] = [where(fn('LOWER', col('email')), { [Op.ne]: this.superAdminEmail })]
     if (options.tier !== 'all') {
@@ -70,7 +70,7 @@ export class UserService {
       order: [
         [
           literal(
-            `CASE WHEN "subscription_tier" = 'premium' THEN 1 WHEN "subscription_tier" = 'pro' THEN 2 WHEN "subscription_tier" = 'free' THEN 3 ELSE 4 END`
+              `CASE WHEN "subscription_tier" = 'premium' THEN 1 WHEN "subscription_tier" = 'pro' THEN 2 WHEN "subscription_tier" = 'free' THEN 3 ELSE 4 END`
           ),
           'ASC'
         ],
@@ -93,15 +93,15 @@ export class UserService {
   }
 
   async updateUser(
-    id: string,
-    payload: {
-      email?: string
-      name?: string | null
-      subscriptionTier?: 'free' | 'pro' | 'premium'
-      subscriptionDuration?: 'month' | 'forever'
-      password?: string
-      role?: UserRole
-    }
+      id: string,
+      payload: {
+        email?: string
+        name?: string | null
+        subscriptionTier?: 'free' | 'pro' | 'premium'
+        subscriptionDuration?: 'month' | 'forever'
+        password?: string
+        role?: UserRole
+      }
   ) {
     const user = await this.users.findById(id)
     if (!user) throw toApiError(404, 'User not found')
